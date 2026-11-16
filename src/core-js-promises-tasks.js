@@ -84,8 +84,8 @@ function getFirstResolvedPromiseResult(promises) {
  * [promise3, promise6, promise2] => Promise rejected with 2
  * [promise3, promise4, promise6] => Promise rejected with 6
  */
-function getFirstPromiseResult(/* promises */) {
-  throw new Error('Not implemented');
+function getFirstPromiseResult(promises) {
+  return Promise.race(promises);
 }
 
 /**
@@ -99,8 +99,8 @@ function getFirstPromiseResult(/* promises */) {
  * [Promise.resolve(1), Promise.resolve(2), Promise.resolve(3)] => Promise fulfilled with [1, 2, 3]
  * [Promise.resolve(1), Promise.reject(2), Promise.resolve(3)] => Promise rejected with 2
  */
-function getAllOrNothing(/* promises */) {
-  throw new Error('Not implemented');
+function getAllOrNothing(promises) {
+  return Promise.all(promises);
 }
 
 /**
@@ -115,8 +115,11 @@ function getAllOrNothing(/* promises */) {
  * [Promise.resolve(1), Promise.resolve(2), Promise.resolve(3)] => Promise fulfilled with [1, 2, 3]
  * [Promise.resolve(1), Promise.reject(2), Promise.resolve(3)]  => Promise fulfilled with [1, null, 3]
  */
-function getAllResult(/* promises */) {
-  throw new Error('Not implemented');
+async function getAllResult(promises) {
+  const result = await Promise.allSettled(promises);
+  return result.map((item) =>
+    item.status === 'fulfilled' ? item.value : null
+  );
 }
 
 /**
@@ -137,10 +140,27 @@ function getAllResult(/* promises */) {
  * [promise1, promise4, promise3] => Promise.resolved('104030')
  * [promise1, promise4, promise3, promise2] => Promise.resolved('10403020')
  */
-function queuePromises(/* promises */) {
-  throw new Error('Not implemented');
-}
+function queuePromises(promises) {
+  if (promises.length === 0) {
+    return new Promise((resolve) => {
+      resolve('');
+    });
+  }
 
+  let result = '';
+
+  const addValue = (value) => {
+    result += value;
+  };
+
+  let chain = promises[0].then(addValue);
+
+  for (let i = 1; i < promises.length; i += 1) {
+    chain = chain.then(() => promises[i].then(addValue));
+  }
+
+  return chain.then(() => result);
+}
 module.exports = {
   getPromise,
   getPromiseResult,
